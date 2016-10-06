@@ -1,6 +1,5 @@
 #! /bin/bash
 
-swc clean
 swc env 
 swc auth 
 swc upload /var/log/samba /swift-commmander-tests/log
@@ -13,3 +12,5 @@ swc rm -rf /swift-commmander-tests/log.archive
 swc rm -rf /swift-commmander-tests/log
 swc ls /swift-commmander-tests
 swc rm -rf /swift-commmander-tests
+
+
