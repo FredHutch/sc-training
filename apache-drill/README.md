@@ -24,10 +24,10 @@ checkout github training repos
 installing apache drill 
 ---
 
-first we are going to install multiple virtual machines (please choose different host names, not drill80, etc)
+first we are going to install a machine container (please choose a different host name, e.g. not drill80)
 
 ```
-prox --bootstrap --mem 32G --disk 8 --cores 8 --runlist drill.runlist new drill80 drill81 drill82
+prox --bootstrap --mem 32G --disk 8 --cores 8 --runlist drill.runlist new drill80
 ```
 
 Prepare NYC taxi cab data
