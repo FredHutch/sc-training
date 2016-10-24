@@ -27,8 +27,40 @@ installing apache drill
 first we are going to install a machine container (please choose a different host name, e.g. not drill80)
 
 ```
-prox --bootstrap --mem 32G --disk 8 --cores 8 --runlist drill.runlist new drill80
+> prox --bootstrap --mem 32G --disk 8 --cores 8 --runlist drill.runlist new drill80
 ```
+
+
+Now let's say you would like to run a cluster of multiple machines for more performance. 
+In this case we want to bootstrap multiple machines (let's call them drill90-92)
+
+```
+> prox --bootstrap --mem 32G --disk 8 --cores 8 --runlist drill.runlist new drill90 drill91 drill92
+
+```
+
+edit /etc/zookeeper/conf/zoo.cfg on all 3 machines 
+```
+# configure drill90-92 as servers so they know to talk to each other
+server.1=drill90:2888:3888
+server.2=drill91:2888:3888
+server.3=drill92:2888:3888
+
+# set leaderServer to "yes" on the first machine (e.g drill90). Leader accepts client connections.
+leaderServes=yes
+
+```
+
+give each machine a unique zookeeper id between 1 and 255 and restart zookeeper:
+```
+> ssh drill90 'sudo sh -c "echo \"echo 1 > /var/lib/zookeeper/myid\" | sudo sh" && sudo systemctl restart zookeeper'
+> ssh drill91 'sudo sh -c "echo \"echo 2 > /var/lib/zookeeper/myid\" | sudo sh" && sudo systemctl restart zookeeper'
+> ssh drill92 'sudo sh -c "echo \"echo 3 > /var/lib/zookeeper/myid\" | sudo sh" && sudo systemctl restart zookeeper'
+
+```
+
+
+
 
 Prepare NYC taxi cab data
 ---

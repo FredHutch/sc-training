@@ -1,4 +1,4 @@
-sudo apt-get install -y debconf-utils parallel
+sudo apt-get install -y debconf-utils parallel zookeeperd
 sudo add-apt-repository -y ppa:webupd8team/java
 sudo apt-get update
 sudo echo "oracle-java7-installer shared/accepted-oracle-license-v1-1 select true" | sudo debconf-set-selections
@@ -8,7 +8,7 @@ sudo mkdir -p /fh/scratch/delete30/
 sudo mount zinc:/tintest1 /fh/scratch/delete30/
 sudo mkdir -p /opt/drill
 sudo wget -P /opt/drill https://tin.fhcrc.org/v1/AUTH_Swift__ADM_IT_public/packages/apache-drill-1.8.0.tar.gz
-tar -xvzf /opt/drill/apache-drill-1.8.0.tar.gz --directory /opt/drill
-echo "Drill installed ! Please execute this line:"
+sudo tar -xvzf /opt/drill/apache-drill-1.8.0.tar.gz --directory /opt/drill
+echo "***** Drill installed ! Please execute this line: *****"
 echo "cd /opt/drill/apache-drill-1.8.0 && bin/drill-embedded"
 
