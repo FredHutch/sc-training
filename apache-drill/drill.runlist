@@ -10,5 +10,4 @@ sudo mkdir -p /opt/drill
 sudo wget -P /opt/drill https://tin.fhcrc.org/v1/AUTH_Swift__ADM_IT_public/packages/apache-drill-1.8.0.tar.gz
 sudo tar -xvzf /opt/drill/apache-drill-1.8.0.tar.gz --directory /opt/drill
 echo "***** Drill installed ! Please execute this line: *****"
-echo "cd /opt/drill/apache-drill-1.8.0 && bin/drill-embedded"
-
+echo "/opt/drill/apache-drill-1.8.0/bin/drill-embedded"
