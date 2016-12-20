@@ -34,22 +34,63 @@ first we want to switch to a departmental / PI account
 
 ```
 > sw2account _SR
-> sw2account groudine_m
+> sw2account henikoff_s
 > swc ls /
 ```
 
-then we try to upload and download some data 
+then we try to upload and download some data. The samba logs which 
+you find on most Linux systems are a good example for a quick test 
 
 ```
-> swc upload /fh/fast/_SR/tmp/qtest /data/qtest
-> swc upload /fh/fast/_SR/tmp/bowtie2-2.1.0 /software/bowtie
-> swc archive /fh/fast/_SR/tmp/bowtie2-2.1.0 /archive/bowtie
-
-> swc compare /fh/fast/_SR/tmp/qtest /data/qtest
-
-> swc download /data/qtest /fh/fast/_SR/tmp/qtest2
-> swc unarch /archive/bowtie /fh/fast/_SR/tmp/bowtie
+swc upload ./testdata /mytest/data
+swc download /mytest/data ./downloads/data
+swc archive ./testdata /mytest/archive
+swc unarch /mytest/archive ./downloads/archive
+swc search useful /mytest
+swc compare ./downloads/data /mytest/data
+swc rm -rf /mytest/archive
+swc rm -rf /mytest/data
+swc ls /mytest
+swc rm -rf /mytest
 
 ```
 
 
+we can search data in full text mode: 
+
+```
+> swc size /archive/Illumina
+    checking swift folder archive/Illumina ...
+    1,435,378,924,506 bytes (1.305 TB) in archive/Illumina (swift)
+
+> time swc search TTTCAAAAACCAGTTTTCATCTTAA /archive/Illumina
+
+real    3m45.709s
+
+This went through more than 1 TB of data in less than 4 minutes
+
+```
+
+you can view up a 8GB sequencing file in ca 30 sec
+
+```
+> time swc less /archive/Illumina/110217_SN367_0145_A81GVBABXX/Data/Intensities/BaseCalls/GERALD_23-02-2011_solexa/s_4_2_sequence.txt
+
+real    0m34.788s
+
+```
+
+
+in HPC scripts you can conditionally download large files to scatch,
+even if they are deleted after 30 days, your script will always run.
+
+```
+#! /bin/bash
+#SBATCH --partition=restart
+
+bamfolder="/fh/scratch/delete30/lastname_f/bam"
+if ! [[ -f $bamfolder/myfile.bam ]]; then
+  swc download /bamarchive/myfile.bam $bamfolder/myfile.bam
+fi
+samtools .... /fh/scratch/delete30/lastname_f/bam/myfile.bam
+```
