@@ -24,7 +24,7 @@ checkout github training repos
 
 ```
 > git clone git://github.com/FredHutch/sc-training
-> cd economy-file
+> cd sc-training/economy-file
 ```
 
 uploading and downloading folders
