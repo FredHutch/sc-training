@@ -1,0 +1,101 @@
+#! /bin/bash
+
+#SBATCH --partition=boneyard
+#SBATCH --error=%J.dask.err
+#SBATCH --output=%J.dask.out
+#SBATCH -N 4
+#SBATCH -c 4
+
+echo $1
+baseport=18786
+scriptname=${0##*/}
+
+freeport(){
+  myport=$baseport
+  while netstat -atwn | grep "^.*:${myport}.*:\*\s*LISTEN\s*$" > /dev/null; do
+    myport=$(( ${myport} + 1 ))
+  done
+  echo "${myport}"
+}
+
+module load python3/3.6.0
+
+port=$(freeport)
+
+echo SCHEDULER: ${SLURMD_NODENAME}:${port}
+
+dask-scheduler --port ${port} --host $SLURMD_NODENAME --pid-file dask-scheduler.pid &
+
+srun fhdaskworker ${SLURMD_NODENAME}:${port} 
+
+# launch the script that uses dask
+if [[ -n $1 ]]; then
+  $1 ${SLURMD_NODENAME}:${port}
+else
+  echo "no dask script in fhdask argument"
+fi
+
+
+
+
+#Usage: dask-scheduler [OPTIONS]
+#
+#Options:
+#
+#  --port INTEGER          Serving port
+#  --http-port INTEGER     HTTP port
+#  --bokeh-port INTEGER    Bokeh port
+#  --bokeh / --no-bokeh    Launch Bokeh Web UI  [default: True]
+#  --host TEXT             IP or hostname of this server
+#  --show / --no-show      Show web UI
+#  --bokeh-whitelist TEXT  IP addresses to whitelist for bokeh.
+#  --prefix TEXT           Prefix for the bokeh app
+#  --use-xheaders BOOLEAN  User xheaders in bokeh app for ssl termination in
+#                          header  [default: False]
+#           File to write the process PID
+#  --help                  Show this message and exit.
+
+
+#petersen@rhino1:/home…tersen/dasktmp$ dask-scheduler 
+#distributed.scheduler - INFO - -----------------------------------------------
+#distributed.scheduler - INFO -   Scheduler at:      140.107.221.186:8786
+#distributed.scheduler - INFO -        http at:      140.107.221.186:9786
+#distributed.bokeh.application - INFO - Web UI: http://140.107.221.186:8787/status/
+#distributed.scheduler - INFO - -----------------------------------------------
+#distributed.core - INFO - Connection from 140.107.221.186:33376 to Scheduler
+#distributed.core - INFO - Connection from 140.107.221.186:33377 to Scheduler
+#distributed.core - INFO - Connection from 140.107.221.186:33378 to Scheduler
+
+
+#SLURM_CHECKPOINT_IMAGE_DIR=/var/spool/slurm-llnl/checkpoint
+#SLURM_NODELIST=gizmod[51-54]
+#SLURM_JOB_NAME=fhdask
+#SLURMD_NODENAME=gizmod51
+#SLURM_TOPOLOGY_ADDR=gizmod51
+#SLURM_PRIO_PROCESS=0
+#SLURM_NODE_ALIASES=(null)
+#SLURM_JOB_QOS=normal
+#SLURM_TOPOLOGY_ADDR_PATTERN=node
+#SLURM_NNODES=4
+#SLURM_JOBID=45842828
+#SLURM_NTASKS=16
+#SLURM_TASKS_PER_NODE=12,2,1(x2)
+#SLURM_JOB_ID=45842828
+#SLURM_JOB_USER=petersen
+#SLURM_JOB_UID=35410
+#SLURM_NODEID=0
+#SLURM_SUBMIT_DIR=/fh/fast/_ADM/SciComp/user/petersen/dasktmp
+#SLURM_TASK_PID=3140
+#SLURM_NPROCS=16
+#SLURM_CPUS_ON_NODE=12
+#SLURM_PROCID=0
+#SLURM_JOB_NODELIST=gizmod[51-54]
+#SLURM_LOCALID=0
+#SLURM_JOB_CPUS_PER_NODE=12,2,1(x2)
+#SLURM_CLUSTER_NAME=gizmo
+#SLURM_GTIDS=0
+#SLURM_SUBMIT_HOST=rhino1
+#SLURM_JOB_PARTITION=boneyard
+#SLURM_JOB_ACCOUNT=scicomp
+#SLURM_JOB_NUM_NODES=4
+
