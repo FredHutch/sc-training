@@ -12,12 +12,13 @@ else:
 print(e)
 
 testdata = '/fh/scratch/delete30/_HDC/testdata'
+#testdata = '/fh/fast/_ADM/SciComp/data'
 
-nyc0 = dd.read_csv(testdata+'/nyc-taxi-cleaned/yellow0/*.csv',
-                parse_dates=['Trip_Pickup_DateTime', 'Trip_Dropoff_DateTime'])
+#nyc0 = dd.read_csv(testdata+'/nyc-taxi-cleaned/yellow0/*.csv',
+#                parse_dates=['Trip_Pickup_DateTime', 'Trip_Dropoff_DateTime'])
 
-nyc1 = dd.read_csv(testdata+'/nyc-taxi-cleaned/yellow1/*.csv',
-        parse_dates=['pickup_datetime', 'dropoff_datetime'])
+#nyc1 = dd.read_csv(testdata+'/nyc-taxi-cleaned/yellow1/*.csv',
+#        parse_dates=['pickup_datetime', 'dropoff_datetime'])
              # skipinitialspace=True)
 
 nyc2 = dd.read_csv(testdata+'/nyc-taxi-cleaned/yellow2/*.csv',
@@ -28,13 +29,16 @@ nyc2 = dd.read_csv(testdata+'/nyc-taxi-cleaned/yellow2/*.csv',
 #nyc1.head()
 #nyc2.head()
 
+#nyc0, nyc1, nyc2 = e.persist([nyc0, nyc1, nyc2])
 
-nyc0, nyc1, nyc2 = e.persist([nyc0, nyc1, nyc2])
+nyc2 = e.persist(nyc2)
 
 
-print(nyc0.head())
-print(nyc0.Payment_Type.value_counts().compute())
-print(nyc1.payment_type.value_counts().compute())
+#print(nyc0.head())
+
+#print(nyc0.Payment_Type.value_counts().compute())
+#print(nyc1.payment_type.value_counts().compute())
+print('payment type:')
 print(nyc2.payment_type.value_counts().compute())
 
 

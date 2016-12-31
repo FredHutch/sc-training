@@ -1,41 +1,64 @@
 #! /bin/bash
 
-#SBATCH --partition=boneyard
+###SBATCH --partition=boneyard
 #SBATCH --error=%J.dask.err
 #SBATCH --output=%J.dask.out
-#SBATCH -N 4
-#SBATCH -c 4
+#SBATCH --share
+#SBATCH --parsable
 
-echo $1
-baseport=18786
+# a randomly selected node from the slurm nodelist (inactive)
+#randnode=$(scontrol show hostname ${SLURM_NODELIST} | shuf | head -1)
+
+baseport=$(shuf -i 8786-60000 -n 1)
 scriptname=${0##*/}
+if [[ -z $SLURM_CPUS_PER_TASK ]]; then
+  SLURM_CPUS_PER_TASK="1"
+fi
 
 freeport(){
-  myport=$baseport
+  local myport=$(( $1 + 1 ))
   while netstat -atwn | grep "^.*:${myport}.*:\*\s*LISTEN\s*$" > /dev/null; do
     myport=$(( ${myport} + 1 ))
   done
   echo "${myport}"
 }
+echoerr(){
+  # echo to stderr instead of stdout
+  echo -e "$@" 1>&2
+}
 
-module load python3/3.6.0
+### Start Script
 
-port=$(freeport)
 
-echo SCHEDULER: ${SLURMD_NODENAME}:${port}
+# load the latest python if dask cannot be found
+if ! hash dask-scheduler 2>/dev/null; then
+  module load python3/3.6.0
+  echoerr "loading module python3/3.6.0"
+fi
 
-dask-scheduler --port ${port} --host $SLURMD_NODENAME --pid-file dask-scheduler.pid &
+# get the next free ports 
+port=$(freeport $baseport)
+bokehport=$(freeport $port)
+httpport=$(freeport $bokehport)
 
-srun fhdaskworker ${SLURMD_NODENAME}:${port} 
+echo "SCHEDULER ${SLURMD_NODENAME}:${port}"
+echo "BOKEH ${SLURMD_NODENAME}:${bokehport}"
 
-# launch the script that uses dask
+# starting a dask scheduler / controller
+dask-scheduler --port ${port} --http-port ${httpport} --bokeh-port ${bokehport} --host $SLURMD_NODENAME --pid-file dask-scheduler.pid &
+
+# starting as many dask workers as tasks allocated
+srun dask-worker --nthreads ${SLURM_CPUS_PER_TASK} ${SLURMD_NODENAME}:${port}
+#srun fhdaskworker ${SLURMD_NODENAME}:${port} 
+
+# launch the script passed as argument to fhdask
 if [[ -n $1 ]]; then
   $1 ${SLURMD_NODENAME}:${port}
 else
   echo "no dask script in fhdask argument"
 fi
 
-
+exit 0
 
 
 #Usage: dask-scheduler [OPTIONS]
@@ -98,4 +121,98 @@ fi
 #SLURM_JOB_PARTITION=boneyard
 #SLURM_JOB_ACCOUNT=scicomp
 #SLURM_JOB_NUM_NODES=4
+
+
+
+
+#cores=$(awk -v RS=[0-9]+ '{print RT+0;exit}' <<< "$SLURM_JOB_CPUS_PER_NODE")
+
+#echo "dask-worker: ${SLURMD_NODENAME} (cores: ${SLURM_CPUS_PER_TASK})"
+
+#echo " ***************** START $SLURMD_NODENAME ***********************"
+#echo "SLURM_NODEID: $SLURM_NODEID"
+#echo "SLURM_PROCID: $SLURM_PROCID"
+#echo "SLURM_STEP_ID: $SLURM_STEP_ID"
+#echo "SLURM_TASK_PID: $SLURM_TASK_PID"
+#echo "SLURM_JOB_CPUS_PER_NODE: $SLURM_JOB_CPUS_PER_NODE"
+## env | grep slurm
+#echo " ***************** STOP $SLURMD_NODENAME  ***********************"
+
+
+
+
+
+
+#dask-worker [OPTIONS] SCHEDULER
+#
+#Usage: dask-worker [OPTIONS] SCHEDULER
+#
+#Options:
+#  --worker-port INTEGER  Serving worker port, defaults to randomly assigned
+#  --http-port INTEGER    Serving http port, defaults to randomly assigned
+#  --nanny-port INTEGER   Serving nanny port, defaults to randomly assigned
+#  --host TEXT            Serving host. Defaults to an ip address that can
+#                         hopefully be visible from the scheduler network.
+#  --nthreads INTEGER     Number of threads per process. Defaults to number of
+#                         cores
+#  --nprocs INTEGER       Number of worker processes.  Defaults to one.
+#  --name TEXT            Alias
+#  --memory-limit TEXT    Number of bytes before spilling data to disk. This
+#                         can be an integer (nbytes) float (fraction of total
+#                         memory) or auto
+#  --no-nanny
+#  --pid-file TEXT        File to write the process PID
+#  --temp-filename TEXT   Internal use only
+#  --help                 Show this message and exit.
+#
+#
+#
+#SLURM_PROCID: 2
+#SLURM_STEP_ID: 0
+#SLURM_TASK_PID: 20255
+#SLURM_NODELIST=gizmod[51-54]
+#SLURM_CHECKPOINT_IMAGE_DIR=/var/spool/slurm-llnl/checkpoint
+#SLURM_JOB_NAME=fhdask
+#SLURM_TOPOLOGY_ADDR=gizmod53
+#SLURMD_NODENAME=gizmod53
+#SLURM_PRIO_PROCESS=0
+#SLURM_SRUN_COMM_PORT=42441
+#SLURM_JOB_QOS=normal
+#SLURM_TOPOLOGY_ADDR_PATTERN=node
+#SLURM_NNODES=4
+#SLURM_STEP_NUM_NODES=4
+#SLURM_JOBID=45843088
+#SLURM_NTASKS=4
+#SLURM_LAUNCH_NODE_IPADDR=140.107.217.115
+#SLURM_STEP_ID=0
+#SLURM_STEP_LAUNCHER_PORT=42441
+#SLURM_TASKS_PER_NODE=1(x4)
+#SLURM_CPUS_PER_TASK=4
+#SLURM_JOB_ID=45843088
+#SLURM_STEPID=0
+#SLURM_JOB_USER=petersen
+#SLURM_SRUN_COMM_HOST=140.107.217.115
+#SLURM_JOB_UID=35410
+#SLURM_NODEID=2
+#SLURM_STEP_RESV_PORTS=12566-12567
+#SLURM_SUBMIT_DIR=/fh/fast/_ADM/SciComp/user/petersen/dasktmp
+#SLURM_NPROCS=4
+#SLURM_TASK_PID=20255
+#SLURM_DISTRIBUTION=cyclic
+#SLURM_CPUS_ON_NODE=4
+#SLURM_PROCID=2
+#SLURM_JOB_NODELIST=gizmod[51-54]
+#SLURM_LOCALID=0
+#SLURM_CLUSTER_NAME=gizmo
+#SLURM_JOB_CPUS_PER_NODE=4(x4)
+#SLURM_SUBMIT_HOST=gizmod51
+#SLURM_GTIDS=2
+#SLURM_JOB_PARTITION=boneyard
+#SLURM_STEP_NUM_TASKS=4
+#SLURM_JOB_ACCOUNT=scicomp
+#SLURM_JOB_NUM_NODES=4
+#SLURM_STEP_TASKS_PER_NODE=1(x4)
+#SLURM_STEP_NODELIST=gizmod[51-54]
+
+
 
