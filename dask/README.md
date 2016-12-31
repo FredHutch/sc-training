@@ -30,6 +30,7 @@ This method allows us to work on data that is larger than a single machine
 or use more cpus than you would typically find on a single machine. 
 
 
+Testing Dask
 ---
 
 first we are going to have a look at the code we want to execute.
@@ -67,6 +68,9 @@ sys	0m0.552s
 so this script runs a little longer than 4 minutes when using 4 workers
 with a total of 8 cpu cores.
 
+
+A Dask cluster on Gizmo (our HPC cluster running SLURM)
+---
 
 Now let's start a new Dask cluster using the 'grabdask' script. When the
 script asks how many workers we want we answer 64.
@@ -114,12 +118,50 @@ We see that this script now runs in 26 instead of 266 seconds. While we
 achieve a 10 fold performance improvement we need 16 times more 
 computer power.
 
-Running the same test with 2, 4, 8, 16, 64, 128 and 196 cores we get 
+Running the same test with 2, 4, 8, 16, 32, 64, 128 and 196 cores we get 
 run times between 893 and 23 seconds:
 
 
 ![NYC Taxi runtimes](img/nyc-taxi-runtimes.png)
 
+We can see that while there a dramatic performance improvement after increasing 
+the core count it may not be worth throwing more than 64 cores at this 
+specific compute problem.
+
+
+Running in batch mode
+---
+
+The grabdask script is useful for building a dask cluster and then 
+trying a number of options on the same cluster. For production use 
+this is not optimal because the dask cluster will keep running and block 
+resources until manually stopped. We prefer batch mode instead and can 
+use the fhdask script with sbatch:
+
+```
+> sbatch --tasks=62 --cpus-per-task=2 fhdask nyc-taxi.py
+
+```
+
+
+
+Problems
+---
+
+Sometimes, when I am launching 16 workers, I am getting this error message. I am not
+getting it with 4, 8, 32 or 64....weird:
+
+```
+petersen@rhino1:/home…-training/dask$ grabdask 
+Please enter the number of dask workers (default: 8): 16
+Please enter the number of days to grab these workers (default: 1): 
+Job 45980375: 2 cores per worker, 32 total cores.
+Job 45980375 pending, reason: None
+Job 45980375 pending, reason: 
+job ended and likely failed, please check 45980375.dask.err :
+srun: error: Unable to create job step: More processors requested than permitted
+
+```
 
 References
 ---
