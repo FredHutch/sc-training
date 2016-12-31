@@ -111,9 +111,14 @@ sys	0m0.412s
 ```
 
 We see that this script now runs in 26 instead of 266 seconds. While we
-achieved a 10 fold performance improvement we needed 16 times more 
-computer power to achieve this.
+achieve a 10 fold performance improvement we need 16 times more 
+computer power.
 
+Running the same test with 2, 4, 8, 16, 64, 128 and 196 cores we get 
+run times between 893 and 23 seconds:
+
+
+![NYC Taxi runtimes](img/nyc-taxi-runtimes.png)
 
 
 References
