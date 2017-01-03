@@ -1,18 +1,20 @@
 #! /bin/bash
 
-platform=$(lsb_release -rs)
-myhost=$(hostname)
-script=${0##*/}
+# create a Dask cluster on SLURM interactively 
+# requires fhdask script 
+
+scriptn=${0##*/}
 cmdline="$@"
 defworkers=8
 defdays=1
+touser=$(/app/bin/fhrealuser)
+debugto="petersen"
+domain=$(hostname -d)
 
 echoerr(){
   # echo to stderr instead of stdout
   echo -e "$@" 1>&2
 }
-
-touser=$(/app/bin/fhrealuser)
 
 if ! hash dask-scheduler 2>/dev/null; then
   source /app/bin/fhmodulecheck
@@ -26,11 +28,9 @@ if [[ -z $workers ]]; then workers=$defworkers; fi
 read -t 30 -p "Please enter the number of days to grab these workers (default: ${defdays}): " days
 if [[ -z $days ]]; then days=$defdays; fi
 
-#mpack -s "$subject" $1 "$to"
-
 totcpu=$((workers*2))
-jobid=$(sbatch --job-name=$script --tasks=${workers} --cpus-per-task=2 --time=${days}:0 ${cmdline} fhdask)
-#jobid=$(sbatch --job-name=$script --tasks=${workers} --cpus-per-task=2 --time=${days}:0 fhdask)
+jobid=$(sbatch --job-name=$scriptn --tasks=${workers} --cpus-per-task=2 --time=${days}:0 ${cmdline} fhdask)
+
 echoerr "Job ${jobid}: 2 cores per worker, $totcpu total cores."
 
 while true; do
@@ -65,9 +65,6 @@ done
 sched=''
 until [[ -n ${sched} ]]; do
   (( j+=1 ))
-  #if [[ -f ${jobid}.dask.err ]]; then
-  #  break
-  #fi
   sched=$(grep "^SCHEDULER " ${jobid}.dask.out 2>/dev/null)
   sched=${sched//"SCHEDULER "/""}
 
@@ -87,9 +84,10 @@ echoerr "  in mounted file systems such as /home or /fh\n"
 echoerr "  You can now connect to Dask, e.g. e = distributed.Executor(\"${sched}\")."
 echoerr "  For status monitoring with Bokeh please go to http://${bokeh}/"
 
+mpack -s "${scriptn}: run by ${touser}" ${jobid}.dask.err "${debugto}@${domain}"
+
 if hash chromium-browser 2>/dev/null; then
   if [[ -n $DISPLAY ]]; then 
-    #echoerr "   starting chromimum browser"
     httpcode="0"
     echoerr "  or wait until browser is started....\n"
     until [[ "$httpcode" == "200" ]]; do 

@@ -19,21 +19,21 @@ checkout github training repos
 ```
 
 
-What is dask ?
+What is Dask ?
 ---
 
-dask is a compute framework that allows data scientists to use dataframes
-or arrays that span multiple cpus or multiple machines. 
-These dataframe or array objects are (largely) compatible to pandas 
+Dask is a compute framework that allows data scientists to use dataframes
+or arrays that span multiple cpus or machines. 
+These dataframe or array objects are (largely) compatible with pandas 
 dataframes and numpy arrays.
-This method allows us to work on data that is larger than a single machine 
+Dask allows us to work on data that is too large to fit a single machine 
 or use more cpus than you would typically find on a single machine. 
 
 
 Testing Dask
 ---
 
-first we are going to have a look at the code we want to execute.
+First we are going to have a look at the code we want to execute. 
 
 ```
 > head nyc-taxi.py
@@ -132,14 +132,14 @@ specific compute problem.
 Running in batch mode
 ---
 
-The grabdask script is useful for building a dask cluster and then 
+The grabdask script is useful for building a Dask cluster and then 
 trying a number of options on the same cluster. For production use 
 this is not optimal because the dask cluster will keep running and block 
 resources until manually stopped. We prefer batch mode instead and can 
 use the fhdask script with sbatch:
 
 ```
-> sbatch --tasks=62 --cpus-per-task=2 fhdask nyc-taxi.py
+> sbatch --tasks=32 --cpus-per-task=2 --time=1-0 fhdask nyc-taxi.py
 
 ```
 
