@@ -211,6 +211,7 @@ srun: error: Unable to create job step: More processors requested than permitted
 References
 ---
 
-https://www.continuum.io/blog/developer-blog/high-performance-hadoop-anaconda-and-dask-your-cluster
-http://matthewrocklin.com/blog/work/2016/02/22/dask-distributed-part-2
-https://github.com/dask/dask-examples/blob/master/nyctaxi-2013.ipynb
+- https://www.continuum.io/blog/developer-blog/high-performance-hadoop-anaconda-and-dask-your-cluster
+- http://matthewrocklin.com/blog/work/2016/02/22/dask-distributed-part-2
+- https://github.com/dask/dask-examples/blob/master/nyctaxi-2013.ipynb
+
