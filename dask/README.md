@@ -129,6 +129,31 @@ the core count it may not be worth throwing more than 64 cores at this
 specific compute problem.
 
 
+nyc-taxi.py - what does it actually do ?
+--- 
+
+```
+    !python
+    from dask import dataframe as dd
+    nyc2 = dd.read_csv(testdata+'/nyc-taxi-cleaned/yellow2/*.csv',
+            parse_dates=['tpep_pickup_datetime', 'tpep_dropoff_datetime'])
+
+    nyc2 = e.persist(nyc2)
+
+    print('payment type, please wait ...')
+    print(nyc2.payment_type.value_counts().compute())
+```
+
+- We use the read_csv function we already know from pandas to load all
+  csv files in a directory 
+- the persist function tells the distrbuted executor that there is work
+- and finally we are counting and grouping the occurrence of each payment
+  type.
+- the only difference from pandas is that .compute() needs to be called
+  explicily to start the query or computation
+
+
+
 Running in batch mode
 ---
 
@@ -143,6 +168,10 @@ use the fhdask script with sbatch:
 
 ```
 
+Using batchmode has the following benefits:
+
+- Gizmo ressources are only allocated for the time the dask script runs
+- The dask scheduler is shutdown quickly can not pose a potential security risk
 
 
 Problems
