@@ -164,14 +164,30 @@ resources until manually stopped. We prefer batch mode instead and can
 use the fhdask script with sbatch:
 
 ```
-> sbatch --tasks=32 --cpus-per-task=2 --time=1-0 fhdask nyc-taxi.py
+> sbatch --tasks=32 --cpus-per-task=2 --time=1-0 fhdask ./nyc-taxi.py
 
 ```
 
 Using batchmode has the following benefits:
 
 - Gizmo ressources are only allocated for the time the dask script runs
+- You do not have to remember the host and port of the Dask scheduler
+  (the fhdask script passes host:port as 1st arg to the python script)
 - The dask scheduler is shutdown quickly can not pose a potential security risk
+
+one thing to consider with batch mode is that you need to check the output 
+file *.dask.out for the hostname and port of the Bokeh web interface:
+
+```
+> grep BOKEH 46100942.dask.out 
+BOKEH gizmof279:31845
+
+```
+
+With this information you can connect to http://gizmof279:31845/status
+and see this:
+
+![NYC Taxi status](img/nyc-taxi-bokeh.png)
 
 
 Problems
