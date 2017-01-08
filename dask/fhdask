@@ -29,11 +29,14 @@ echoerr(){
 }
 
 
-
 # load the latest python if dask cannot be found
 if ! hash dask-scheduler 2>/dev/null; then
   module load python3/3.6.0
   echoerr "loading module python3/3.6.0"
+fi
+
+if [[ "$scriptn" == "slurm_script" ]]; then
+  scriptn="fhdask"
 fi
 
 # get the next free ports 
@@ -49,14 +52,18 @@ echo "HTTP ${SLURMD_NODENAME}:${httpport}"
 # starting a dask scheduler / controller
 dask-scheduler --port ${port} --http-port ${httpport} --bokeh-port ${bokehport} --host $SLURMD_NODENAME --pid-file dask-scheduler.pid &
 
-# starting as many dask workers as tasks allocated
-srun dask-worker --nthreads ${SLURM_CPUS_PER_TASK} ${SLURMD_NODENAME}:${port} &
+mytasks=$SLURM_NTASKS
+if [[ $mytasks -gt 4 ]]; then
+  # reduce workers by one as a workaround for this error:
+  # srun: error: Unable to create job step: More processors requested than permitted
+  mytasks=$(($mytasks-1))
+fi
 
 # launch the script passed as argument to fhdask
 if [[ -n $1 ]]; then
   # starting as many dask workers as tasks allocated (background)
-  srun dask-worker --nthreads ${SLURM_CPUS_PER_TASK} ${SLURMD_NODENAME}:${port} &
-
+  echoerr "starting ${mytasks} dask workers with ${SLURM_CPUS_PER_TASK} cores each in the background"
+  srun -n ${mytasks} -c ${SLURM_CPUS_PER_TASK} dask-worker --nthreads ${SLURM_CPUS_PER_TASK} ${SLURMD_NODENAME}:${port} &
   if [[ -f $1 ]]; then
     echoerr "launching script file $1 ${SLURMD_NODENAME}:${port} as fhdask argument"
     $1 ${SLURMD_NODENAME}:${port} $2 $3 $4
@@ -69,7 +76,9 @@ if [[ -n $1 ]]; then
   mpack -s "${scriptn}: run by ${touser}" ${SLURM_JOB_ID}.dask.err "${debugto}@${domain}"
 else
   # starting as many dask workers as tasks allocated (foreground)
-  srun dask-worker --nthreads ${SLURM_CPUS_PER_TASK} ${SLURMD_NODENAME}:${port}
+  echoerr "starting ${mytasks} dask workers with ${SLURM_CPUS_PER_TASK} cores each in the foreground"
+  echoerr "use scancel ${SLURM_JOB_ID} to end this Dask job"
+  srun -n ${mytasks} -c ${SLURM_CPUS_PER_TASK} dask-worker --nthreads ${SLURM_CPUS_PER_TASK} ${SLURMD_NODENAME}:${port}
 fi
 
 exit 0
