@@ -23,12 +23,16 @@ What is Dask ?
 ---
 
 Dask is a compute framework that allows data scientists to use dataframes
-or arrays that span multiple cpus or machines. 
+or arrays that span multiple cpus or machines. (http://dask.pydata.org/)
 These dataframe or array objects are (largely) compatible with pandas 
 dataframes and numpy arrays.
 Dask allows us to work on data that is too large to fit a single machine 
 or use more cpus than you would typically find on a single machine. 
-
+Dask is similar to Pyspark, however it is a little less heavy for 
+Python users, here is a comparison http://dask.pydata.org/en/latest/spark.html
+Dask is part of the Blaze ecosystem http://blaze.pydata.org/ and 
+supported by https://www.continuum.io/ the makers of Numpy and the 
+Anaconda Python distribution.
 
 Testing Dask
 ---
@@ -189,22 +193,6 @@ and see this:
 
 ![NYC Taxi status](img/nyc-taxi-bokeh.png)
 
-
-Problems
----
-
-Sometimes, when I am launching 16 workers, I am getting this error message. I am not
-getting it with 4, 8, 32 or 64....weird:
-
-```
-petersen@rhino1:/home…-training/dask$ grabdask 
-Please enter the number of dask workers (default: 8): 16
-Please enter the number of days to grab these workers (default: 1): 
-Job 45980375: 2 cores per worker, 32 total cores.
-Job 45980375 pending, reason: None
-Job 45980375 pending, reason: 
-job ended and likely failed, please check 45980375.dask.err :
-srun: error: Unable to create job step: More processors requested than permitted
 
 ```
 
