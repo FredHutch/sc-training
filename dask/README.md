@@ -58,7 +58,8 @@ else:
 you can launch nyc-taxi.py with the ip address / host name / port of the 
 dask scheduler that is able to receive the data. For example we can 
 time the execution of this script that this submitted to a dask cluster
-which runs ontop of gizmo.
+which runs ontop of gizmo. (You need to first setup your Dask cluster,
+ see below)
 
 ```
 petersen@rhino1:/home…-training/dask$ time ./nyc-taxi.py gizmof8:12922
