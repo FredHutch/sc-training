@@ -78,7 +78,7 @@ until [[ -n ${sched} ]]; do
 done
 
 echoerr "\n  WARNING: Dask has been started in your user context, which means that:"
-echoerr "  Anyone connecting to port $sched could get access to your data"
+echoerr "  Anyone on campus connecting to port $sched could get access to your data"
 echoerr "  in mounted file systems such as /home or /fh\n"
 
 echoerr "  You can now connect to Dask, e.g. e = distributed.Executor(\"${sched}\")."
