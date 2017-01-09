@@ -197,6 +197,11 @@ and see this:
 ![NYC Taxi status](img/nyc-taxi-bokeh.png)
 
 
+Not only do we see detailed runtime information about each distributed 
+work unit, we also see how much time is used for reading from disk, for
+certain functions, etc.
+
+
 ```
 
 References
