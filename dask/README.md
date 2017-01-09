@@ -127,7 +127,7 @@ sys	0m0.412s
 
 We see that this script now runs in 26 instead of 266 seconds. While we
 achieve a 10 fold performance improvement we need 16 times more 
-computer power.
+compute power.
 
 Running the same test with 2, 4, 8, 16, 32, 64, 128 and 196 cores we get 
 run times between 893 and 23 seconds:
@@ -144,15 +144,14 @@ nyc-taxi.py - what does it actually do ?
 --- 
 
 ```
-    !python
-    from dask import dataframe as dd
-    nyc2 = dd.read_csv(testdata+'/nyc-taxi-cleaned/yellow2/*.csv',
-            parse_dates=['tpep_pickup_datetime', 'tpep_dropoff_datetime'])
+from dask import dataframe as dd
+nyc2 = dd.read_csv(testdata+'/nyc-taxi-cleaned/yellow2/*.csv',
+    parse_dates=['tpep_pickup_datetime', 'tpep_dropoff_datetime'])
 
-    nyc2 = e.persist(nyc2)
+nyc2 = e.persist(nyc2)
 
-    print('payment type, please wait ...')
-    print(nyc2.payment_type.value_counts().compute())
+print('payment type, please wait ...')
+print(nyc2.payment_type.value_counts().compute())
 ```
 
 - We use the read_csv function we already know from pandas to load all
