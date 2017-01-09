@@ -81,6 +81,9 @@ A Dask cluster on Gizmo (our HPC cluster running SLURM)
 
 Now let's start a new Dask cluster using the 'grabdask' script. When the
 script asks how many workers we want we answer 64.
+(Note: If the cluster does not have resources for that many workers you
+may try our legacy nodes in the Boneyard queue 'grabdask -p boneyard' or
+request fewer workers)
 
 ```
 petersen@rhino1:/home…-training/dask$ grabdask 
