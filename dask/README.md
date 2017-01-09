@@ -33,6 +33,8 @@ Python users, here is a comparison http://dask.pydata.org/en/latest/spark.html .
 Dask is part of the Blaze ecosystem http://blaze.pydata.org/ and 
 supported by https://www.continuum.io/ the makers of Numpy and the 
 Anaconda Python distribution.
+Dask can integrate well with Hadoop Distributions (HDFS access) and 
+tradtional HPC clusters.
 
 Testing Dask
 ---
