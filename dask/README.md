@@ -29,7 +29,7 @@ dataframes and numpy arrays.
 Dask allows us to work on data that is too large to fit a single machine 
 or use more cpus than you would typically find on a single machine. 
 Dask is similar to Pyspark, however it is a little less heavy for 
-Python users, here is a comparison http://dask.pydata.org/en/latest/spark.html
+Python users, here is a comparison http://dask.pydata.org/en/latest/spark.html .
 Dask is part of the Blaze ecosystem http://blaze.pydata.org/ and 
 supported by https://www.continuum.io/ the makers of Numpy and the 
 Anaconda Python distribution.
