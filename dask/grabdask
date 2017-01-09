@@ -82,8 +82,8 @@ echoerr "  Anyone on campus connecting to port $sched could get access to your d
 echoerr "  in mounted file systems such as /home or /fh\n"
 
 echoerr "  You can now connect to Dask, e.g. e = distributed.Executor(\"${sched}\")."
-echoerr "  For status monitoring with Bokeh please go to http://${bokeh}/"
 echoerr "  To stop your Dask cluster execute: scancel ${jobid} or scancel -n grabdask"
+echoerr "  For status monitoring with Bokeh please go to http://${bokeh}/"
 
 mpack -s "${scriptn}: run by ${touser}" ${jobid}.dask.err "${debugto}@${domain}"
 

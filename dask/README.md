@@ -91,10 +91,11 @@ Job 45980892 pending, reason: None
 Job 45980892 started, waiting for Dask...
 
   WARNING: Dask has been started in your user context, which means that:
-  Anyone connecting to port gizmof77:16575 could get access to your data
-  in mounted file systems such as /home or /fh
+  Anyone on campus connecting to port gizmof77:16575 could get access 
+  to your data in mounted file systems such as /home or /fh
 
   You can now connect to Dask, e.g. e = distributed.Executor("gizmof77:16575").
+  To stop your Dask cluster execute: scancel 45980892 or scancel -n grabdask
   For status monitoring with Bokeh please go to http://gizmof77:16576/
   or wait until browser is started....
 
