@@ -168,10 +168,11 @@ Running in batch mode
 ---
 
 The grabdask script is useful for building a Dask cluster and then 
-trying a number of options on the same cluster. For production use 
-this is not optimal because the dask cluster will keep running and block 
-resources until manually stopped. We prefer batch mode instead and can 
-use the fhdask script with sbatch:
+trying a number of options on the same cluster interactively. For 
+production use this is not optimal because the Dask cluster will keep 
+running and block resources until manually stopped. We prefer batch 
+mode instead and can use the fhdask script direclty with sbatch 
+(grabdask is just a wrapper that conveniently calls the fhdask script.):
 
 ```
 > sbatch --tasks=32 --cpus-per-task=2 --time=1-0 fhdask ./nyc-taxi.py
