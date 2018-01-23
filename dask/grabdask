@@ -5,55 +5,113 @@
 
 scriptn=${0##*/}
 cmdline="$@"
-defworkers=8
+defworkers=16
 defdays=1
 touser=$(/app/bin/fhrealuser)
 debugto="petersen"
 domain=$(hostname -d)
+pythonmodule="Python/3.6.4-foss-2016b-fh1"
+cores=2
+clusters=''
+nodes=''
+memory=''
 
 echoerr(){
   # echo to stderr instead of stdout
   echo -e "$@" 1>&2
 }
 
+printhelp(){
+  # 
+  echoerr "example:\n ${scriptn} -M beagle -p largenode"
+  exit 0
+}
+
 if ! hash dask-scheduler 2>/dev/null; then
   source /app/bin/fhmodulecheck
   echoerr "No dask environment found, wrong python "
-  echoerr "Please execute: module load python3/3.6.0"
+  echoerr "Please execute first: ml $pythonmodule"
   exit 1
 fi
 
-read -t 30 -p "Please enter the number of dask workers (default: ${defworkers}): " workers
+while getopts M:p:c:n:N:h myopts; do
+  case "$myopts" in
+    M)    clusters="-M $OPTARG";; 
+    p)    partition="-p $OPTARG";;
+    c)    cores="$OPTARG";;
+    n)    workers="$OPTARG";;    
+    N)    nodes="-N $OPTARG";;
+    h)    printhelp;;
+    ?)    echo "Command option not supported. Use only single character options !"
+          exit 2;;
+  esac
+done
+#shift $((OPTIND - 1))
+
+#memory="--mem-per-cpu=16384" #8192 or 16384
+if [[ $partition == "-p largenode" ]]; then
+  memory="--mem 33000"
+  cores=4
+fi 
+
+if [[ -z $workers ]]; then
+  echo "Each Dask worker is a Python process, by default ${cores} CPU cores are assigned to each worker via threads"
+  read -t 30 -p "Please enter the number of Dask workers (default: ${defworkers}): " workers
+fi
 if [[ -z $workers ]]; then workers=$defworkers; fi
+
+defnodes=$((workers/cores+1))
+read -t 30 -p "How many compute nodes/servers do you want to allocate for workers (default: ${defnodes}): " numnodes
+if [[ -z $numnodes ]]; then 
+  nodes="-N $defnodes"
+  numnodes=$defnodes
+else
+  nodes="-N $numnodes"   
+fi
+
 read -t 30 -p "Please enter the number of days to grab these workers (default: ${defdays}): " days
 if [[ -z $days ]]; then days=$defdays; fi
 
-totcpu=$((workers*2))
-jobid=$(sbatch --job-name=$scriptn --tasks=${workers} --cpus-per-task=2 --time=${days}:0 ${cmdline} fhdask)
+totcpu=$((workers*cores))
 
-echoerr "Job ${jobid}: 2 cores per worker, $totcpu total cores."
+echo "...running: sbatch --job-name=$scriptn ${nodes} --ntasks=${workers} --cpus-per-task=${cores} --time=${days}-0 ${cmdline} ${memory} fhdask-test"
+jobid=$(sbatch --job-name=$scriptn ${nodes} --ntasks=${workers} --cpus-per-task=${cores} --time=${days}-0 ${cmdline} ${memory} fhdask-test)
+# remove the clustername if returned
+jobid=${jobid%;*}
+
+echoerr "Job ${jobid}: ${cores} cores per worker, $totcpu total cores, $numnodes nodes."
 
 while true; do
   (( i+=1 ))
-  state=$(squeue -h -j ${jobid} --format="%t %r")
-  #echoerr "*** state: ${state}"
+  state=$(squeue -h -j ${jobid} --format="%t %r" ${clusters} ${partition} | tail -1)
+  #echoerr "*** state1: ${state}"
   states=( $state )
   if [[ "${states[0]}" == "R" ]]; then
     echoerr "Job ${jobid} started, waiting for Dask..."
     break
   fi
   echo "Job ${jobid} pending, reason: ${states[1]}"
-  if [[ -z $state ]]; then
+  if [[ -z $state || ${states[0]} == "CLUSTER:" ]]; then
     echo "job ended and likely failed, please check ${jobid}.dask.err :"
     scancel ${jobid}
     tail ${jobid}.dask.err
     exit 1
   fi
+  if [[ "${states[1]}" == "QOSMaxNodePerJobLimit" ]]; then
+    echo "This queue has limited nodes per job, please choose fewer workers"
+    scancel ${jobid}
+    exit 1
+  fi  
   if [[ "${states[1]}" == "MaxCpuPerAccount" || "${states[1]}" == "MaxCpuPerUser" ]]; then
     echo "Limit reached, please choose fewer workers"
     scancel ${jobid}
     exit 1
   fi
+  if [[ "${states[1]}" == "QOSMinCpuNotSatisfied" || "${states[1]}" == "QOSMinMemory" ]]; then
+    echo "This queue requires requesting a minimum number of CPU and memory."
+    scancel ${jobid}
+    exit 1
+  fi 
   if [[ "${states[1]}" == "BadConstraints" ]]; then
     echo "please choose different --constraint options"
     scancel ${jobid}

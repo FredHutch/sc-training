@@ -7,13 +7,24 @@
 
 # create a Dask cluster inside SLURM
 
+pythonmodule="Python/3.6.4-foss-2016b-fh1"
 baseport=$(shuf -i 8786-60000 -n 1)
 scriptn=${0##*/}
 touser=$(/app/bin/fhrealuser)
 debugto="petersen"
 domain=$(hostname -d)
+memlimit="16G"
+
+if [[ "$scriptn" == "slurm_script" ]]; then
+  scriptn="fhdask-test"
+fi
+
 if [[ -z $SLURM_CPUS_PER_TASK ]]; then
   SLURM_CPUS_PER_TASK="1"
+fi
+
+if [[ "$SLURM_JOB_PARTITION" == "largenode" ]]; then
+  memlimit="33000"
 fi
 
 freeport(){
@@ -28,42 +39,47 @@ echoerr(){
   echo -e "$@" 1>&2
 }
 
-
 # load the latest python if dask cannot be found
 if ! hash dask-scheduler 2>/dev/null; then
-  module load python3/3.6.0
-  echoerr "loading module python3/3.6.0"
-fi
-
-if [[ "$scriptn" == "slurm_script" ]]; then
-  scriptn="fhdask"
+  source /app/bin/fhmodulecheck
+  echoerr "No dask environment found, wrong python "
+  echoerr "Please execute first: ml $pythonmodule"
+  exit 1
 fi
 
 # get the next free ports 
 port=$(freeport $baseport)
 bokehport=$(freeport $port)
-httpport=$(freeport $bokehport)
 
 echo "*** Dask ***"
 echo "SCHEDULER ${SLURMD_NODENAME}:${port}"
 echo "BOKEH ${SLURMD_NODENAME}:${bokehport}"
-echo "HTTP ${SLURMD_NODENAME}:${httpport}"
+
 
 # starting a dask scheduler / controller
-dask-scheduler --port ${port} --http-port ${httpport} --bokeh-port ${bokehport} --host $SLURMD_NODENAME --pid-file dask-scheduler.pid &
+dask-scheduler --port ${port} --bokeh-port ${bokehport} --host $SLURMD_NODENAME --pid-file dask-scheduler.pid &
+
+jobcfg=$(scontrol --oneliner show job $SLURM_JOB_ID)
+jobcfg=${jobcfg##*NumCPUs=}
+cpualloc=${jobcfg%%CPUs*}
 
 mytasks=$SLURM_NTASKS
-if [[ $mytasks -gt 4 ]]; then
-  # reduce workers by one as a workaround for this error:
-  # srun: error: Unable to create job step: More processors requested than permitted
-  mytasks=$(($mytasks-1))
-fi
+# workaround: https://github.com/SchedMD/slurm/commit/b11ec103005e684580fa50ddd3b1028f603222d9#diff-c67addf9af7391265e4b91ef6c09a596
+mytasks=$((cpualloc/SLURM_CPUS_PER_TASK))
+
+#if [[ $mytasks -gt 4 ]]; then
+#  # reduce workers by one as a workaround for this error:
+#  # srun: error: Unable to create job step: More processors requested than permitted
+#  mytasks=$(($mytasks-1))
+#fi
+
+#--nodes ${numnodes}
 
 # launch the script passed as argument to fhdask
 if [[ -n $1 ]]; then
   # starting as many dask workers as tasks allocated (background)
   echoerr "starting ${mytasks} dask workers with ${SLURM_CPUS_PER_TASK} cores each in the background"
-  srun -n ${mytasks} -c ${SLURM_CPUS_PER_TASK} dask-worker --nthreads ${SLURM_CPUS_PER_TASK} ${SLURMD_NODENAME}:${port} &
+  srun --ntasks ${mytasks} --cpus-per-task ${SLURM_CPUS_PER_TASK} dask-worker --nthreads ${SLURM_CPUS_PER_TASK} --memory-limit ${memlimit} --local-directory ${SCRATCH} ${SLURMD_NODENAME}:${port} &
   if [[ -f $1 ]]; then
     echoerr "launching script file $1 ${SLURMD_NODENAME}:${port} as fhdask argument"
     $1 ${SLURMD_NODENAME}:${port} $2 $3 $4
@@ -76,9 +92,10 @@ if [[ -n $1 ]]; then
   mpack -s "${scriptn}: run by ${touser}" ${SLURM_JOB_ID}.dask.err "${debugto}@${domain}"
 else
   # starting as many dask workers as tasks allocated (foreground)
-  echoerr "starting ${mytasks} dask workers with ${SLURM_CPUS_PER_TASK} cores each in the foreground"
+  echoerr "starting ${mytasks} dask workers on ${SLURM_NNODES} nodes with ${SLURM_CPUS_PER_TASK} cores each in the foreground"
   echoerr "use scancel ${SLURM_JOB_ID} to end this Dask job"
-  srun -n ${mytasks} -c ${SLURM_CPUS_PER_TASK} dask-worker --nthreads ${SLURM_CPUS_PER_TASK} ${SLURMD_NODENAME}:${port}
+  # --nodes ${numnodes}
+  srun --ntasks ${mytasks} --cpus-per-task ${SLURM_CPUS_PER_TASK}  dask-worker --nthreads ${SLURM_CPUS_PER_TASK} --memory-limit ${memlimit} --local-directory ${SCRATCH} ${SLURMD_NODENAME}:${port}
 fi
 
 exit 0
